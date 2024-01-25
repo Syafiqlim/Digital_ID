@@ -1,0 +1,102 @@
+<!-- digital-id-scanner/views/scanner.ejs for Digital ID Scanner -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital ID Scanner</title>
+</head>
+<body>
+  <h1>Digital ID Scanner</h1>
+  <video id="scanner" width="100%" height="100%" autoplay></video>
+  <button id="toggleCamera">Toggle Camera</button>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let video = document.getElementById('scanner');
+      let currentStream;
+
+      // Check if the browser supports the HTML5 camera API
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Request camera access with video constraint
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then((stream) => {
+            video.srcObject = stream;
+            currentStream = stream;
+
+            // Listen for the first frame of the video to be available
+            video.addEventListener('loadeddata', () => {
+              // Start scanning for QR codes
+              startScanning();
+            });
+          })
+          .catch((error) => {
+            console.error('Error accessing camera:', error);
+          });
+      } else {
+        console.error('Camera not supported in this browser');
+      }
+
+      // Scanning logic
+      function startScanning() {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        // Set canvas size to match the video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Interval for capturing frames and decoding QR codes
+        setInterval(() => {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Decode QR code from the current video frame
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+          // If QR code is detected, stop scanning and handle the code
+          if (code) {
+            handleQRCode(code.data);
+          }
+        }, 1000); // Adjust the interval as needed
+      }
+
+      // Update the QR code with the new token data
+      function updateQRCode(newToken) {
+        // Assuming you have an element with id 'scanner' for the video
+        const video = document.getElementById('scanner');
+        // Remove the existing video track
+        video.srcObject.getTracks().forEach(track => track.stop());
+        
+        // Request camera access with the new token as a constraint
+        navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: newToken } } })
+          .then((stream) => {
+            video.srcObject = stream;
+          })
+          .catch((error) => {
+            console.error('Error updating QR code:', error);
+          });
+      }
+
+      // Handle QR code
+      function handleQRCode(data) {
+        console.log('QR Code data:', data);
+
+        // Fetch username based on the QR code
+        fetch(`http://localhost:3000/api/user/${encodeURIComponent(data)}`)
+          .then(response => response.json())
+          .then(user => {
+            console.log('Retrieved username:', user.username);
+          })
+          .catch(error => {
+            console.error('Error fetching user data:', error);
+          });
+      }
+    });
+  </script>
+  <!-- Include the jsQR library -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+
+</body>
+</html>

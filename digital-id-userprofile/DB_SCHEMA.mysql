@@ -1,0 +1,11 @@
+CREATE DATABASE 1day_1challenge_day8;
+
+USE 1day_1challenge_day8;
+
+CREATE TABLE Users
+(
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255),
+    uniqueToken VARCHAR(255) UNIQUE,
+    PRIMARY KEY (username)
+);

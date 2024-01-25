@@ -1,0 +1,60 @@
+<!-- digital-id-userprofile/views/userprofile.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+</head>
+<body>
+  <h1>Digital ID</h1>
+  <h3>by Syafiqlim :3</h3>
+  <p>Welcome, <%= username %>!</p>
+  <img id="qrCode" src="<%= qrCodeData %>" alt="QR Code">
+  <p>Your Digital ID will automatically change and refresh in <span id="countdown">30</span> seconds.</p>
+
+  <!-- Add the script for refreshing the QR code with countdown timer -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      let countdownValue = 30; // Initial countdown value in seconds
+
+      function updateCountdown() {
+        document.getElementById('countdown').textContent = countdownValue;
+      }
+
+      function refreshQRCode() {
+        fetch('/refreshToken')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('qrCode').src = data.qrCodeData;
+          })
+          .catch(error => {
+            console.error('Error refreshing QR code:', error);
+          });
+      }
+
+      function updateAndRefresh() {
+        updateCountdown();
+        refreshQRCode();
+        countdownValue = 30; // Reset countdown value
+      }
+
+      // Initial update of countdown
+      updateCountdown();
+
+      // Refresh the QR code every 30 seconds
+      setInterval(function () {
+        countdownValue -= 1;
+        if (countdownValue <= 0) {
+          updateAndRefresh();
+        } else {
+          updateCountdown();
+        }
+      }, 1000);
+
+      // Initial refresh of QR code
+      refreshQRCode();
+    });
+  </script>
+</body>
+</html>
